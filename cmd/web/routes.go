@@ -10,5 +10,8 @@ func (app application) routes() http.Handler {
 
 	fileServer := http.FileServer(http.Dir(".ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	return mux
+
+	//MIDDLEWARE functions
+	//add headers to mux handler, before any request is sent to mux
+	return secureHeaders(mux)
 }
