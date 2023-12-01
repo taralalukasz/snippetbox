@@ -13,5 +13,5 @@ func (app application) routes() http.Handler {
 
 	//MIDDLEWARE functions
 	//add headers to mux handler, before any request is sent to mux
-	return app.logRequest(secureHeaders(mux))
+	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
 }
