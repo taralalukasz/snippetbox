@@ -1,25 +1,41 @@
 package main
 
 import (
+	"github.com/bmizerany/pat" // New import
 	"github.com/justinas/alice"
 	"net/http"
 )
 
 func (app application) routes() http.Handler {
-	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	//APPROACH 1 - USED STANDARD MUX SERVER WHICH DOESN'T SUPPORT MORE HTTP METHODS ON THE SAME ENDPOINT
+	//standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	//
+	//mux := http.NewServeMux()
+	//mux.HandleFunc("/", app.home)
+	//mux.HandleFunc("/snippet", app.showSnippet)
+	//mux.HandleFunc("/snippet/create", app.createSnippet)
+	//
+	//fileServer := http.FileServer(http.Dir(".ui/static/"))
+	//mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	//
+	////MIDDLEWARE functions
+	////add headers to mux handler, before any request is sent to mux
+	////return app.recoverPanic(app.logRequest(secureHeaders(mux)))
+	//
+	////alternative to above -use alice to simplify syntax
+	//return standardMiddleware.Then(mux)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet", app.showSnippet)
-	mux.HandleFunc("/snippet/create", app.createSnippet)
+	//APPROACH 2 - USE PAT MUX SO WE CAN EASILY MAKE TWO ENDPOINTS snippet/create
+	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	mux := pat.New()
+	mux.Get("/", http.HandlerFunc(app.home))
+	//you have to register this before :id, because  mux tries to guess the endpoint. We need to go from general to specific
+	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
+	mux.Put("/snippet/create", http.HandlerFunc(app.createSnippet))
+	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet))
 
 	fileServer := http.FileServer(http.Dir(".ui/static/"))
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
-	//MIDDLEWARE functions
-	//add headers to mux handler, before any request is sent to mux
-	//return app.recoverPanic(app.logRequest(secureHeaders(mux)))
-
-	//alternative to above -use alice to simplify syntax
 	return standardMiddleware.Then(mux)
 }
