@@ -31,7 +31,7 @@ func (app application) routes() http.Handler {
 	mux.Get("/", http.HandlerFunc(app.home))
 	//you have to register this before :id, because  mux tries to guess the endpoint. We need to go from general to specific
 	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
-	mux.Put("/snippet/create", http.HandlerFunc(app.createSnippet))
+	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
 	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet))
 
 	fileServer := http.FileServer(http.Dir(".ui/static/"))

@@ -54,9 +54,18 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	//	app.clientError(w, http.StatusMethodNotAllowed)
 	//	return
 	//}
-	title := "O snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi"
-	expires := "7"
+
+	//limit the request body size to 4 MiB
+	http.MaxBytesReader(w, r.Body, 4096)
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	title := r.Form.Get("title")
+	content := r.Form.Get("content")
+	expires := r.Form.Get("expires")
 
 	id, err := app.snippets.Insert(title, content, expires)
 	if err != nil {
