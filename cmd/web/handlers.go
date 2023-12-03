@@ -40,10 +40,8 @@ func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flash := app.session.PopString(r, "flash")
-
 	//here we pass information from backend to frontend
-	data := &templateData{Snippet: snippet, Flash: flash}
+	data := &templateData{Snippet: snippet}
 	app.render(w, r, "show.page.tmpl", data)
 	if err != nil {
 		app.serverError(w, err)
