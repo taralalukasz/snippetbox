@@ -40,8 +40,10 @@ func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	flash := app.session.PopString(r, "flash")
+
 	//here we pass information from backend to frontend
-	data := &templateData{Snippet: snippet}
+	data := &templateData{Snippet: snippet, Flash: flash}
 	app.render(w, r, "show.page.tmpl", data)
 	if err != nil {
 		app.serverError(w, err)
@@ -66,8 +68,6 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 
 	form := forms.New(r.Form)
 
-	form.Get("title")
-
 	form.Required("title", "content", "expires")
 	form.MaxLength("content", 100)
 	form.PermittedValues("expires", "1", "7", "365")
@@ -82,7 +82,10 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := app.snippets.Insert(form.Get("title"), form.Get("content"), form.Get("expires"))
 	if err != nil {
 		app.serverError(w, err)
+		return
 	}
+
+	app.session.Put(r, "flash", "Snippet successfully created")
 	//after pat mux we don't use query params anymore
 	//http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
