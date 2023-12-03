@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"flag"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/golangcollege/sessions"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"tarala/snippetbox/pkg/models/mysql"
+	"time"
 )
 
 type Config struct {
@@ -21,6 +23,7 @@ type application struct {
 	infoLog       *log.Logger
 	snippets      *mysql.SnippetModel
 	templateCache map[string]*template.Template
+	session       *sessions.Session
 }
 
 func main() {
@@ -34,10 +37,14 @@ func main() {
 	//var cfg = &Config{}
 	//flag.StringVar(&cfg.Addr, "addr", ":4000", "Http Network Address")
 	//flag.StringVar(&cfg.StaticDir, "static-dir", "./ui/static", "Path to static assets")
-	flag.Parse()
 	// this is the way to access environment variables
 	// it works with -flags as well, but doesn't let you set default values
 	// moreover it's always string type
+
+	//we need a secret to encrypt session cookies
+	secret := flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@ge", "Secret to encrypt session cookies")
+
+	flag.Parse()
 
 	//LOGGERS for info
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -49,7 +56,6 @@ func main() {
 	if err != nil {
 		errorLog.Fatal(err)
 	}
-
 	defer db.Close()
 
 	//Cache of templates loading
@@ -58,6 +64,10 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	//SESSION CREATION
+	session := sessions.New([]byte(*secret))
+	session.Lifetime = 12 * time.Hour
+
 	//DESIGN PATTERN - instead of keeping loggers as global variables
 	//Initialize application object which holds "global" loggers
 	app := &application{
@@ -65,6 +75,7 @@ func main() {
 		infoLog:       infoLog,
 		snippets:      &mysql.SnippetModel{DB: db},
 		templateCache: cache,
+		session:       session,
 	}
 
 	//configure ROUTES here

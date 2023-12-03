@@ -27,12 +27,16 @@ func (app application) routes() http.Handler {
 
 	//APPROACH 2 - USE PAT MUX SO WE CAN EASILY MAKE TWO ENDPOINTS snippet/create
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	//we use session Handler middleware from golangcollege lib
+	//it has to wrap  each route we want to enable session for
+	dynamicMiddleware := alice.New(app.session.Enable)
+
 	mux := pat.New()
-	mux.Get("/", http.HandlerFunc(app.home))
+	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
 	//you have to register this before :id, because  mux tries to guess the endpoint. We need to go from general to specific
-	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
-	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
-	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet))
+	mux.Get("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
+	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
 
 	fileServer := http.FileServer(http.Dir(".ui/static/"))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
