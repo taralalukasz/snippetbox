@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
+	"tarala/snippetbox/pkg/forms"
 	"tarala/snippetbox/pkg/models"
-	"unicode/utf8"
 )
 
 func (app application) home(w http.ResponseWriter, r *http.Request) {
@@ -65,36 +64,22 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	title := r.Form.Get("title")
-	content := r.Form.Get("content")
-	expires := r.Form.Get("expires")
+	form := forms.New(r.Form)
 
-	errors := make(map[string]string)
-	if strings.TrimSpace(title) == "" {
-		errors["title"] = "This field cannot be blank"
-	}
+	form.Get("title")
 
-	if strings.TrimSpace(content) == "" {
-		errors["content"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(content) > 100 {
-		errors["content"] = "This field is too long (maximum is 100 characters)"
-	}
+	form.Required("title", "content", "expires")
+	form.MaxLength("content", 100)
+	form.PermittedValues("expires", "1", "7", "365")
 
-	if strings.TrimSpace(expires) == "" {
-		errors["expires"] = "This field cannot be blank"
-	} else if expires != "365" && expires != "7" && expires != "1" {
-		errors["expires"] = "This field is invalid"
-	}
-
-	if len(errors) > 0 {
+	if !form.Valid() {
 		app.render(w, r, "create.page.tmpl", &templateData{
-			FormErrors: errors,
-			FormData:   r.PostForm,
+			Form: form,
 		})
 		return
 	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	id, err := app.snippets.Insert(form.Get("title"), form.Get("content"), form.Get("expires"))
 	if err != nil {
 		app.serverError(w, err)
 	}
@@ -104,5 +89,8 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, "create.page.tmpl", nil)
+	app.render(w, r, "create.page.tmpl", &templateData{
+		//we create brand new form, so data is nil
+		Form: forms.New(nil),
+	})
 }

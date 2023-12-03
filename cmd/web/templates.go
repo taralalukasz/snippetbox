@@ -2,8 +2,8 @@ package main
 
 import (
 	"html/template"
-	"net/url"
 	"path/filepath"
+	"tarala/snippetbox/pkg/forms"
 	"tarala/snippetbox/pkg/models"
 	"time"
 )
@@ -12,8 +12,9 @@ type templateData struct {
 	CurrentYear int
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
-	FormErrors  map[string]string
-	FormData    url.Values
+	//FormErrors  map[string]string
+	//FormData    url.Values
+	Form *forms.Form
 }
 
 func humanDate(t time.Time) string {
