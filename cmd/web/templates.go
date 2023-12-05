@@ -12,10 +12,8 @@ type templateData struct {
 	CurrentYear int
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
-	//FormErrors  map[string]string
-	//FormData    url.Values
-	Form  *forms.Form
-	Flash string
+	Form        *forms.Form
+	Flash       string
 }
 
 func humanDate(t time.Time) string {
