@@ -8,7 +8,7 @@ import (
 	"tarala/snippetbox/pkg/models"
 )
 
-func (app application) home(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	//we can now remove it, because pat mux has this feature ootb
 	//if r.URL.Path != "/" {
 	//	app.notFound(w)
@@ -25,7 +25,7 @@ func (app application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, "home.page.tmpl", data)
 }
 
-func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
+func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 	if err != nil || id < 1 {
 		app.notFound(w)
@@ -48,7 +48,7 @@ func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
+func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	//after using pat mux  this is redundant / superflous
 	//if r.Method != "POST" {
 	//	w.Header().Set("Allow", "POST")
@@ -89,18 +89,18 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
-func (app application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
+func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, "create.page.tmpl", &templateData{
 		//we create brand new form, so data is nil
 		Form: forms.New(nil),
 	})
 }
 
-func (app application) signupUserForm(w http.ResponseWriter, r *http.Request) {
+func (app *application) signupUserForm(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, "signup.page.tmpl", &templateData{Form: forms.New(nil)})
 }
 
-func (app application) signupUser(w http.ResponseWriter, r *http.Request) {
+func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
@@ -135,11 +135,11 @@ func (app application) signupUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/user/login"), http.StatusSeeOther)
 }
 
-func (app application) loginUserForm(w http.ResponseWriter, r *http.Request) {
+func (app *application) loginUserForm(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, "login.page.tmpl", &templateData{Form: forms.New(nil)})
 }
 
-func (app application) loginUser(w http.ResponseWriter, r *http.Request) {
+func (app *application) loginUser(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		app.serverError(w, err)
@@ -164,7 +164,7 @@ func (app application) loginUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
-func (app application) logoutUser(w http.ResponseWriter, r *http.Request) {
+func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
 	app.session.Remove(r, "userID")
 	app.session.Put(r, "flash", "You've been logged out successfully!")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
