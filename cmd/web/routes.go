@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (app application) routes() http.Handler {
+func (app *application) routes() http.Handler {
 	//APPROACH 1 - USED STANDARD MUX SERVER WHICH DOESN'T SUPPORT MORE HTTP METHODS ON THE SAME ENDPOINT
 	//standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	//
