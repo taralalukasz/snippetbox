@@ -11,6 +11,7 @@ import (
 type templateData struct {
 	CurrentYear       int
 	AuthenticatedUser int
+	CSRFToken         string
 	Snippet           *models.Snippet
 	Snippets          []*models.Snippet
 	Form              *forms.Form

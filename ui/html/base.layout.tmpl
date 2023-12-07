@@ -8,7 +8,7 @@
         <link rel='stylesheet' href='/static/css/main.css'>
         <link rel="shortcut icon" href="/static/img/favicon.ico" type="image/x-i"/>
         <!-- Also link to some fonts hosted by Google -->
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ub">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu Mono">
     </head>
     <body>
         <header>
@@ -26,6 +26,7 @@
             <div>
                 {{if .AuthenticatedUser}}
                 <form action='/user/logout' method='POST'>
+                    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
                     <button>Logout</button>
                 </form>
                 {{else}}

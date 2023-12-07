@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/justinas/nosurf"
 	"net/http"
 	"runtime/debug"
 	"time"
@@ -54,7 +55,7 @@ func (app *application) addDefaultData(td *templateData, r *http.Request) *templ
 	}
 	td.CurrentYear = time.Now().Year()
 	td.AuthenticatedUser = app.authenticatedUser(r)
-	//add the message to template data, if  exists
+	td.CSRFToken = nosurf.Token(r)
 	td.Flash = app.session.PopString(r, "flash")
 	return td
 }
