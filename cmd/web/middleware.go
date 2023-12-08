@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"github.com/justinas/nosurf"
 	"net/http"
@@ -40,7 +42,7 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 
 func (app *application) requireAuthenticatedUser(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		if app.authenticatedUser(r) == 0 {
+		if app.authenticatedUser(r) == nil {
 			//this ends up the request pipeline
 			http.Redirect(w, r, "/user/login", 302)
 			return
@@ -63,4 +65,31 @@ func noSurf(next http.Handler) http.Handler {
 		Secure:   true,
 	})
 	return csrfHandler
+}
+
+func (app *application) authenticate(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if !app.session.Exists(r, "userID") {
+			//proceed further, no way to authenticate
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		user, err := app.users.Get(app.session.GetInt(r, "userID"))
+		if err == sql.ErrNoRows {
+			//remove  non existent userID
+			app.session.Remove(r, "userID")
+			next.ServeHTTP(w, r)
+			return
+		} else if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		//set user to the context
+		ctx := context.WithValue(r.Context(), contextKeyUser, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+
+	return http.HandlerFunc(fn)
 }
