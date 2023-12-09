@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/justinas/nosurf"
 	"net/http"
 	"runtime/debug"
+	"tarala/snippetbox/pkg/models"
 	"time"
 )
 
@@ -48,12 +50,22 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, name stri
 	buf.WriteTo(w)
 }
 
-func (app application) addDefaultData(td *templateData, r *http.Request) *templateData {
+func (app *application) addDefaultData(td *templateData, r *http.Request) *templateData {
 	if td == nil {
 		td = &templateData{}
 	}
 	td.CurrentYear = time.Now().Year()
-	//add the message to template data, if  exists
+	td.AuthenticatedUser = app.authenticatedUser(r)
+	td.CSRFToken = nosurf.Token(r)
 	td.Flash = app.session.PopString(r, "flash")
 	return td
+}
+
+func (app *application) authenticatedUser(r *http.Request) *models.User {
+	user, ok := r.Context().Value(contextKeyUser).(*models.User)
+	if !ok {
+		return nil
+	}
+
+	return user
 }

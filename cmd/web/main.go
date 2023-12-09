@@ -14,6 +14,10 @@ import (
 	"time"
 )
 
+type contextKey string
+
+var contextKeyUser = contextKey("user")
+
 type Config struct {
 	Addr      string
 	StaticDir string
@@ -69,6 +73,8 @@ func main() {
 	//SESSION CREATION
 	session := sessions.New([]byte(*secret))
 	session.Lifetime = 12 * time.Hour
+	session.Secure = true
+	session.SameSite = http.SameSiteStrictMode
 
 	//DESIGN PATTERN - instead of keeping loggers as global variables
 	//Initialize application object which holds "global" loggers

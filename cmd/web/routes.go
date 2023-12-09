@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (app application) routes() http.Handler {
+func (app *application) routes() http.Handler {
 	//APPROACH 1 - USED STANDARD MUX SERVER WHICH DOESN'T SUPPORT MORE HTTP METHODS ON THE SAME ENDPOINT
 	//standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	//
@@ -29,19 +29,19 @@ func (app application) routes() http.Handler {
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	//we use session Handler middleware from golangcollege lib
 	//it has to wrap  each route we want to enable session for
-	dynamicMiddleware := alice.New(app.session.Enable)
+	dynamicMiddleware := alice.New(app.session.Enable, noSurf, app.authenticate)
 
 	mux := pat.New()
 	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
 	//you have to register this before :id, because  mux tries to guess the endpoint. We need to go from general to specific
-	mux.Get("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippetForm))
-	mux.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
+	mux.Get("/snippet/create", dynamicMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", dynamicMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.createSnippet))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
 	mux.Get("/user/signup", dynamicMiddleware.ThenFunc(app.signupUserForm))
 	mux.Post("/user/signup", dynamicMiddleware.ThenFunc(app.signupUser))
 	mux.Get("/user/login", dynamicMiddleware.ThenFunc(app.loginUserForm))
 	mux.Post("/user/login", dynamicMiddleware.ThenFunc(app.loginUser))
-	mux.Post("/user/logout", dynamicMiddleware.ThenFunc(app.logoutUser))
+	mux.Post("/user/logout", dynamicMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.logoutUser))
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
