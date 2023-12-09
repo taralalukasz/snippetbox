@@ -4,14 +4,17 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"flag"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/golangcollege/sessions"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"tarala/snippetbox/pkg/models/mysql"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/golangcollege/sessions"
+
+	"tarala/snippetbox/pkg/models"
+	"tarala/snippetbox/pkg/models/mysql"
 )
 
 type contextKey string
@@ -24,60 +27,71 @@ type Config struct {
 }
 
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	snippets      *mysql.SnippetModel
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	// this is how you use interfaces to pass various implementaitons to the context.
+	// both sql.SnippetModel and mock.SnippetModel have exactly the same method signatures, so can be used if passed that way
+	snippets interface {
+		Insert(string, string, string) (int, error)
+		Get(int) (*models.Snippet, error)
+		Latest() ([]*models.Snippet, error)
+	}
+
+	users interface {
+		Insert(string, string, string) error
+		Authenticate(string, string) (int, error)
+		Get(int) (*models.User, error)
+	}
 	templateCache map[string]*template.Template
 	session       *sessions.Session
-	users         *mysql.UserModel
 }
 
 func main() {
-	//STEP 1 CONFIGURATION
+	// STEP 1 CONFIGURATION
 	// 	WAY 1  - arguments params
 	addr := flag.String("addr", ":4000", "HTTP Network Address")
 	dsn := flag.String("dsn", "web:dupa123@/snippetbox?parseTime=true", "MySQL Connection")
 	// 	WAY 2 - os environment vars
-	//os.Getenv("SNIPPETBOX_ADDR")
+	// os.Getenv("SNIPPETBOX_ADDR")
 	//	WAY3  - create own cfg struct and use StringVar method
-	//var cfg = &Config{}
-	//flag.StringVar(&cfg.Addr, "addr", ":4000", "Http Network Address")
-	//flag.StringVar(&cfg.StaticDir, "static-dir", "./ui/static", "Path to static assets")
+	// var cfg = &Config{}
+	// flag.StringVar(&cfg.Addr, "addr", ":4000", "Http Network Address")
+	// flag.StringVar(&cfg.StaticDir, "static-dir", "./ui/static", "Path to static assets")
 	// this is the way to access environment variables
 	// it works with -flags as well, but doesn't let you set default values
 	// moreover it's always string type
 
-	//we need a secret to encrypt session cookies
+	// we need a secret to encrypt session cookies
 	secret := flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@ge", "Secret to encrypt session cookies")
 
 	flag.Parse()
 
-	//LOGGERS for info
+	// LOGGERS for info
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	//for error
+	// for error
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	//DATABASE connection
+	// DATABASE connection
 	db, err := openDB(*dsn)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 	defer db.Close()
 
-	//Cache of templates loading
+	// Cache of templates loading
 	cache, err := newTemplateCache("./ui/html")
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 
-	//SESSION CREATION
+	// SESSION CREATION
 	session := sessions.New([]byte(*secret))
 	session.Lifetime = 12 * time.Hour
 	session.Secure = true
 	session.SameSite = http.SameSiteStrictMode
 
-	//DESIGN PATTERN - instead of keeping loggers as global variables
-	//Initialize application object which holds "global" loggers
+	// DESIGN PATTERN - instead of keeping loggers as global variables
+	// Initialize application object which holds "global" loggers
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
@@ -87,10 +101,10 @@ func main() {
 		users:         &mysql.UserModel{DB: db},
 	}
 
-	//configure ROUTES here
+	// configure ROUTES here
 	mux := app.routes()
 
-	//initialize  custom TLS configuration struct
+	// initialize  custom TLS configuration struct
 	tlsConfig := &tls.Config{
 		PreferServerCipherSuites: true,
 		CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256},
@@ -106,7 +120,7 @@ func main() {
 		//MaxVersion: tls.VersionTLS12,
 	}
 
-	//Create own server which uses the same logger to print logs
+	// Create own server which uses the same logger to print logs
 	srv := &http.Server{
 		TLSConfig: tlsConfig,
 		ErrorLog:  errorLog,
@@ -121,7 +135,6 @@ func main() {
 	infoLog.Printf("Starting server on %v", *addr)
 	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(err)
-
 }
 
 func openDB(dsn string) (*sql.DB, error) {
