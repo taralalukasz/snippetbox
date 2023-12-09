@@ -165,5 +165,12 @@ func (app application) loginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app application) logoutUser(w http.ResponseWriter, r *http.Request) {
+	app.session.Remove(r, "userID")
+	// Add a flash message to the session to confirm to the user that they've be
+	app.session.Put(r, "flash", "You've been logged out successfully!")
+	http.Redirect(w, r, "/", 303)
+}
 
+func ping(w http.ResponseWriter, r *http.Request)  {
+	w.Write([]byte("OK"))
 }
