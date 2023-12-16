@@ -21,7 +21,11 @@ func (m SnippetModel) Insert(title, content, expires string) (int, error) {
 }
 
 func (m SnippetModel) Get(id int) (*models.Snippet, error) {
-	return mockSnippet, nil
+	if id == 1 {
+		return mockSnippet, nil
+	} 
+	return nil, models.ErrNoRecord
+	
 }
 
 func (m SnippetModel) Latest() ([]*models.Snippet, error) {
