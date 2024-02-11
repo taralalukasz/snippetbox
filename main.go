@@ -22,6 +22,17 @@ func showSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func createSnippet(w http.ResponseWriter, r *http.Request) {
+	if (r.Method != "POST") {
+		//this is adding headers
+		w.Header().Set("Allow", "POST")
+		//you can call this method only once, it ultimately sets the header and response
+		// w.WriteHeader(http.StatusMethodNotAllowed)
+		// w.Write([]byte("Method Not Allowed"))
+
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	w.Write([]byte("Create new snippet"))
 }
 
