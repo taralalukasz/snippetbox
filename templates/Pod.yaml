@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: snippetbox
+spec:
+  containers:
+  - name: snippetbox
+    image: taralalukasz123/myimage:1
+    ports:
+    - containerPort: 4000
+  imagePullSecrets:
+  - name: regcred
