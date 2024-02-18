@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snippetbox-deployment
+  labels:
+    app: snippetbox
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: snippetbox
+  template:
+    metadata:
+      labels:
+        app: snippetbox
+    spec:
+      containers:
+      - name: snippetbox
+        image: taralalukasz123/myimage:1
+        ports:
+        - containerPort: 4000
+      imagePullSecrets:
+      - name: regcred
