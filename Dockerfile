@@ -14,7 +14,7 @@ RUN go build -o ${APP_NAME} ./cmd/web
 #Stage 2
 FROM golang:latest
 
-ARG APP_NAME snippetbox
+ARG APP_NAME=snippetbox
 ENV appname=${APP_NAME}
 WORKDIR /app
 
